@@ -332,3 +332,12 @@ export const deleteESGRecord = async (req, res) => {
     );
   }
 };
+export default {
+  createESGRecord,
+  getESGRecords,
+  getESGRecordById,
+  updateESGRecord,
+  submitESGRecord,
+  approveESGRecord,
+  deleteESGRecord
+};

@@ -221,4 +221,12 @@ export const logout = async (req, res) => {
       errorResponse(ERROR_MESSAGES.INTERNAL_ERROR)
     );
   }
+  
+};
+export default {
+  register,
+  login,
+  getProfile,
+  updateProfile,
+  logout
 };

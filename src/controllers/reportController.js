@@ -333,3 +333,11 @@ export const getReportStatistics = async (req, res) => {
     );
   }
 };
+export default {
+  generateReport,
+  getReports,
+  getReportById,
+  updateReportStatus,
+  deleteReport,
+  getReportStatistics
+};
