@@ -23,13 +23,11 @@ const esgRecordSchema = new mongoose.Schema(
       quarter: {
         type: Number,
         enum: [1, 2, 3, 4],
-        required: false,
       },
       month: {
         type: Number,
         min: 1,
         max: 12,
-        required: false,
       },
     },
 
@@ -37,50 +35,50 @@ const esgRecordSchema = new mongoose.Schema(
     environmental: {
       scope1Emissions: {
         type: Number,
-        required: [true, 'Scope 1 emissions are required'],
-        min: [0, 'Emissions cannot be negative'],
+        required: true,
+        min: 0,
         default: 0,
       },
       scope2Emissions: {
         type: Number,
-        required: [true, 'Scope 2 emissions are required'],
-        min: [0, 'Emissions cannot be negative'],
+        required: true,
+        min: 0,
         default: 0,
       },
       scope3Emissions: {
         type: Number,
-        required: [true, 'Scope 3 emissions are required'],
-        min: [0, 'Emissions cannot be negative'],
+        required: true,
+        min: 0,
         default: 0,
       },
       totalCarbonEmissions: {
         type: Number,
-        min: [0, 'Total emissions cannot be negative'],
+        min: 0,
       },
       energyConsumption: {
         type: Number,
-        min: [0, 'Energy consumption cannot be negative'],
+        min: 0,
         default: 0,
       },
       renewableEnergyPercentage: {
         type: Number,
-        min: [0, 'Percentage cannot be negative'],
-        max: [100, 'Percentage cannot exceed 100'],
+        min: 0,
+        max: 100,
         default: 0,
       },
       waterUsage: {
         type: Number,
-        min: [0, 'Water usage cannot be negative'],
+        min: 0,
         default: 0,
       },
       wasteGenerated: {
         type: Number,
-        min: [0, 'Waste generated cannot be negative'],
+        min: 0,
         default: 0,
       },
       wasteRecycled: {
         type: Number,
-        min: [0, 'Waste recycled cannot be negative'],
+        min: 0,
         default: 0,
       },
     },
@@ -89,41 +87,41 @@ const esgRecordSchema = new mongoose.Schema(
     social: {
       totalEmployees: {
         type: Number,
-        required: [true, 'Total employees is required'],
-        min: [0, 'Employees cannot be negative'],
+        required: true,
+        min: 0,
         default: 0,
       },
       diversityRatio: {
         type: Number,
-        min: [0, 'Diversity ratio cannot be negative'],
-        max: [100, 'Diversity ratio cannot exceed 100'],
+        min: 0,
+        max: 100,
         default: 0,
       },
       femaleEmployeesPercentage: {
         type: Number,
-        min: [0, 'Percentage cannot be negative'],
-        max: [100, 'Percentage cannot exceed 100'],
+        min: 0,
+        max: 100,
         default: 0,
       },
       healthAndSafetyIncidents: {
         type: Number,
-        min: [0, 'Incidents cannot be negative'],
+        min: 0,
         default: 0,
       },
       trainingHoursPerEmployee: {
         type: Number,
-        min: [0, 'Training hours cannot be negative'],
+        min: 0,
         default: 0,
       },
       employeeTurnoverRate: {
         type: Number,
-        min: [0, 'Turnover rate cannot be negative'],
-        max: [100, 'Turnover rate cannot exceed 100'],
+        min: 0,
+        max: 100,
         default: 0,
       },
       communityInvestment: {
         type: Number,
-        min: [0, 'Community investment cannot be negative'],
+        min: 0,
         default: 0,
       },
     },
@@ -132,14 +130,14 @@ const esgRecordSchema = new mongoose.Schema(
     governance: {
       boardIndependence: {
         type: Number,
-        min: [0, 'Board independence cannot be negative'],
-        max: [100, 'Board independence cannot exceed 100'],
+        min: 0,
+        max: 100,
         default: 0,
       },
       femaleDirectorsPercentage: {
         type: Number,
-        min: [0, 'Percentage cannot be negative'],
-        max: [100, 'Percentage cannot exceed 100'],
+        min: 0,
+        max: 100,
         default: 0,
       },
       complianceStatus: {
@@ -153,12 +151,12 @@ const esgRecordSchema = new mongoose.Schema(
       },
       whistleblowerCases: {
         type: Number,
-        min: [0, 'Cases cannot be negative'],
+        min: 0,
         default: 0,
       },
       dataBreaches: {
         type: Number,
-        min: [0, 'Breaches cannot be negative'],
+        min: 0,
         default: 0,
       },
       auditFrequency: {
@@ -188,34 +186,27 @@ const esgRecordSchema = new mongoose.Schema(
 
     reviewNotes: {
       type: String,
-      maxlength: [1000, 'Review notes cannot exceed 1000 characters'],
+      maxlength: 1000,
     },
 
-    submittedAt: {
-      type: Date,
-    },
-
-    approvedAt: {
-      type: Date,
-    },
+    submittedAt: Date,
+    approvedAt: Date,
   },
   {
     timestamps: true,
   }
 );
 
-// Calculate total carbon emissions before saving
-esgRecordSchema.pre('save', function (next) {
+esgRecordSchema.pre('save', function () {
   if (this.environmental) {
     this.environmental.totalCarbonEmissions =
       (this.environmental.scope1Emissions || 0) +
       (this.environmental.scope2Emissions || 0) +
       (this.environmental.scope3Emissions || 0);
   }
-  next();
 });
 
-// Indexes for efficient querying
+// Indexes
 esgRecordSchema.index({ organization: 1, 'reportingPeriod.year': -1 });
 esgRecordSchema.index({ status: 1 });
 esgRecordSchema.index({ submittedBy: 1 });
@@ -223,4 +214,3 @@ esgRecordSchema.index({ submittedBy: 1 });
 const ESGRecord = mongoose.model('ESGRecord', esgRecordSchema);
 
 export default ESGRecord;
-

@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please provide a password'],
       minlength: [8, 'Password must be at least 8 characters'],
-      select: false, // Don't return password by default
+      select: false,
     },
 
     role: {
@@ -61,42 +61,38 @@ const userSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // Automatically adds createdAt and updatedAt
+    timestamps: true,
   }
 );
 
-// Hash password before saving
-userSchema.pre('save', async function (next) {
-  // Only hash if password is modified
-  if (!this.isModified('password')) {
-    return next();
-  }
+// ======================
+// Password Hashing Hook
+// ======================
 
-  try {
-    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS, 10) || 12;
-    const salt = await bcrypt.genSalt(saltRounds);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
+userSchema.pre('save', async function () {
+  // Only hash if password was modified
+  if (!this.isModified('password')) return;
+
+  const saltRounds = parseInt(process.env.BCRYPT_ROUNDS, 10) || 12;
+  const salt = await bcrypt.genSalt(saltRounds);
+  this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Method to compare passwords
+// ======================
+// Instance Methods
+// ======================
+
+// Compare passwords
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  try {
-    return await bcrypt.compare(candidatePassword, this.password);
-  } catch (error) {
-    throw new Error('Password comparison failed');
-  }
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Method to check if user has specific role
+// Check user role
 userSchema.methods.hasRole = function (requiredRole) {
   return this.role === requiredRole;
 };
 
-// Method to get safe user object (without password)
+// Return safe user object
 userSchema.methods.toSafeObject = function () {
   const userObj = this.toObject();
   delete userObj.password;
