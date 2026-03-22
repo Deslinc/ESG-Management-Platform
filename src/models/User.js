@@ -99,6 +99,6 @@ userSchema.methods.toSafeObject = function () {
   return userObj;
 };
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model('EsgUser', userSchema);
 
 export default User;
