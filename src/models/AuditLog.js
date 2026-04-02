@@ -33,7 +33,7 @@ const auditLogSchema = new mongoose.Schema(
 
     performedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'EsgUser',
       required: true,
     },
 

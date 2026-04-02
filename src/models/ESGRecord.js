@@ -175,13 +175,13 @@ const esgRecordSchema = new mongoose.Schema(
 
     submittedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'EsgUser',
       required: true,
     },
 
     reviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'EsgUser',
     },
 
     reviewNotes: {
