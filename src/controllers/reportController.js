@@ -49,10 +49,14 @@ export const generateReport = async (req, res) => {
     }
 
     const records = await esgCalculationService.getRecordsForPeriod(
-      organization,
-      reportStartDate,
-      reportEndDate
-    );
+  organization,
+  reportStartDate,
+  reportEndDate,
+  reportType,
+  year,
+  quarter,
+  month
+);
 
     if (records.length === 0) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json(

@@ -1,6 +1,5 @@
 import ESGRecord from '../models/ESGRecord.js';
 import { roundToDecimal, calculatePercentage } from '../utils/helpers.js';
-
 /**
  * ESG Calculation Service
  * Handles aggregation and calculation of ESG metrics
@@ -40,7 +39,7 @@ class ESGCalculationService {
 
     const totals = records.reduce((acc, record) => {
       const env = record.environmental || {};
-
+      
       acc.scope1 += env.scope1Emissions || 0;
       acc.scope2 += env.scope2Emissions || 0;
       acc.scope3 += env.scope3Emissions || 0;
@@ -49,7 +48,7 @@ class ESGCalculationService {
       acc.waterUsage += env.waterUsage || 0;
       acc.wasteGenerated += env.wasteGenerated || 0;
       acc.wasteRecycled += env.wasteRecycled || 0;
-
+      
       return acc;
     }, {
       scope1: 0,
@@ -68,11 +67,7 @@ class ESGCalculationService {
       totals.scope3
     );
 
-    const avgRenewable = roundToDecimal(
-      totals.renewableEnergy / records.length,
-      2
-    );
-
+    const avgRenewable = roundToDecimal(totals.renewableEnergy / records.length, 2);
     const recyclingRate = this.calculateWasteRecyclingRate(
       totals.wasteGenerated,
       totals.wasteRecycled
@@ -91,7 +86,7 @@ class ESGCalculationService {
   }
 
   /**
-   * Aggregate social metrics
+   * Aggregate social metrics for multiple records
    */
   aggregateSocialMetrics(records) {
     if (!records || records.length === 0) {
@@ -107,14 +102,14 @@ class ESGCalculationService {
 
     const totals = records.reduce((acc, record) => {
       const social = record.social || {};
-
+      
       acc.diversityRatio += social.diversityRatio || 0;
       acc.healthIncidents += social.healthAndSafetyIncidents || 0;
       acc.trainingHours += social.trainingHoursPerEmployee || 0;
       acc.turnoverRate += social.employeeTurnoverRate || 0;
       acc.communityInvestment += social.communityInvestment || 0;
       acc.femalePercentage += social.femaleEmployeesPercentage || 0;
-
+      
       return acc;
     }, {
       diversityRatio: 0,
@@ -136,7 +131,7 @@ class ESGCalculationService {
   }
 
   /**
-   * Aggregate governance metrics
+   * Aggregate governance metrics for multiple records
    */
   aggregateGovernanceMetrics(records) {
     if (!records || records.length === 0) {
@@ -151,13 +146,13 @@ class ESGCalculationService {
 
     const totals = records.reduce((acc, record) => {
       const gov = record.governance || {};
-
+      
       acc.boardIndependence += gov.boardIndependence || 0;
       acc.compliant += gov.complianceStatus === 'compliant' ? 1 : 0;
       acc.whistleblower += gov.whistleblowerCases || 0;
       acc.dataBreaches += gov.dataBreaches || 0;
       acc.femaleDirectors += gov.femaleDirectorsPercentage || 0;
-
+      
       return acc;
     }, {
       boardIndependence: 0,
@@ -167,11 +162,7 @@ class ESGCalculationService {
       femaleDirectors: 0
     });
 
-    const complianceRate = calculatePercentage(
-      totals.compliant,
-      records.length,
-      2
-    );
+    const complianceRate = calculatePercentage(totals.compliant, records.length, 2);
 
     return {
       averageBoardIndependence: roundToDecimal(totals.boardIndependence / records.length, 2),
@@ -184,17 +175,51 @@ class ESGCalculationService {
 
   /**
    * Get ESG records for a specific period
+    * This method filters records based on the reporting period defined in the record, not the creation date
    */
-  async getRecordsForPeriod(organization, startDate, endDate) {
+  async getRecordsForPeriod(organization, startDate, endDate, reportType, year, quarter, month) {
     try {
-      return await ESGRecord.find({
+      // Build query based on report type
+      const query = {
         organization,
-        status: 'approved',
-        createdAt: {
+        status: 'approved'
+      };
+
+      console.log(`Searching for ${reportType} report - Organization: ${organization}, Year: ${year}, Quarter: ${quarter || 'N/A'}`);
+
+      // Filter by reportingPeriod, not createdAt
+      if (reportType === 'quarterly' && quarter) {
+        // For quarterly reports: match exact year and quarter
+        query['reportingPeriod.year'] = year;
+        query['reportingPeriod.quarter'] = quarter;
+        
+      } else if (reportType === 'monthly' && month) {
+        // For monthly reports: match exact year and month
+        query['reportingPeriod.year'] = year;
+        query['reportingPeriod.month'] = month;
+        
+      } else if (reportType === 'annual') {
+        // For annual reports: match all records in that year
+        query['reportingPeriod.year'] = year;
+        
+      } else if (reportType === 'custom') {
+        // For custom reports: filter by creation date within range
+        query.createdAt = {
           $gte: startDate,
           $lte: endDate
-        }
-      }).lean();
+        };
+      }
+
+      const records = await ESGRecord.find(query).lean();
+
+      console.log(`Found ${records.length} approved records for ${reportType} report`);
+      
+      if (records.length === 0) {
+        console.warn(` No approved ESG records found for query:`, query);
+      }
+
+      return records;
+      
     } catch (error) {
       console.error('Error fetching ESG records:', error);
       throw error;
@@ -202,40 +227,31 @@ class ESGCalculationService {
   }
 
   /**
-   * Calculate overall ESG scores
+   * Calculate overall ESG scores (simple methodology)
+   * This is a basic implementation - you can customize based on your scoring methodology
    */
   calculateOverallScores(environmentalSummary, socialSummary, governanceSummary) {
-    const environmentalScore = Math.min(
-      100,
-      Math.max(0, 100 - (environmentalSummary.totalCarbonEmissions / 10000) * 100)
-    );
-
-    const socialScore = Math.min(
-      100,
-      Math.max(
-        0,
-        (
-          socialSummary.averageDiversityRatio +
-          (100 - socialSummary.totalHealthAndSafetyIncidents) +
-          socialSummary.averageTrainingHours
-        ) / 3
-      )
-    );
-
-    const governanceScore = Math.min(
-      100,
-      Math.max(
-        0,
-        (
-          governanceSummary.averageBoardIndependence +
-          governanceSummary.complianceRate +
-          (100 - governanceSummary.totalDataBreaches * 10)
-        ) / 3
-      )
-    );
-
+    // Simple scoring: normalize metrics to 0-100 scale
+    // This is a placeholder - implement your own scoring logic
+    
+    const environmentalScore = Math.min(100, Math.max(0, 
+      100 - (environmentalSummary.totalCarbonEmissions / 10000) * 100
+    ));
+    
+    const socialScore = Math.min(100, Math.max(0,
+      (socialSummary.averageDiversityRatio + 
+       (100 - socialSummary.totalHealthAndSafetyIncidents) +
+       socialSummary.averageTrainingHours) / 3
+    ));
+    
+    const governanceScore = Math.min(100, Math.max(0,
+      (governanceSummary.averageBoardIndependence +
+       governanceSummary.complianceRate +
+       (100 - governanceSummary.totalDataBreaches * 10)) / 3
+    ));
+    
     const totalScore = (environmentalScore + socialScore + governanceScore) / 3;
-
+    
     return {
       environmentalScore: roundToDecimal(environmentalScore, 2),
       socialScore: roundToDecimal(socialScore, 2),
