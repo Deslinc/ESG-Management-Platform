@@ -92,7 +92,7 @@ const reportSchema = new mongoose.Schema(
     // Report metadata
     generatedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'EsgUser',
       required: true,
     },
 
